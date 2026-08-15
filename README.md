@@ -1,7 +1,9 @@
 # Direct vs Programmatic Tool Calling
 
-This project is an English, notebook-first benchmark that compares Direct Tool
-Calling with Programmatic Tool Calling on deterministic workflows. It includes
+This project is an English, notebook-first benchmark that compares
+[Direct Tool Calling](https://developers.openai.com/api/docs/guides/function-calling)
+with [Programmatic Tool Calling](https://developers.openai.com/api/docs/guides/tools-programmatic-tool-calling)
+on deterministic workflows. It includes
 fixed-fan-out inventory replenishment, adaptive incident investigation, and a
 refund workflow with an explicit approval boundary.
 
