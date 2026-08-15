@@ -9,7 +9,7 @@ refund workflow with an explicit approval boundary.
 
 ### 1. Inventory replenishment
 
-## What the inventory notebook measures
+#### What the inventory notebook measures
 
 Both arms use the same model, reasoning effort, task contract, SKU fixtures, and
 three function tools. Direct Tool Calling may issue parallel function calls. The
@@ -30,6 +30,14 @@ reasoning tokens; estimated model cost; tool calls; output item types; request
 latency; and task end-to-end latency. The pricing snapshot is versioned and every
 dollar value is labeled as an estimate.
 
+Saved results:
+
+- [Small live comparison](outputs/00_inventory_tool_call_trace/inventory_small_live_comparison_trace_export.md)
+- [Small normalized timeline](outputs/00_inventory_tool_call_trace/inventory_small_normalized_semantic_timeline.md)
+- [Medium live comparison](outputs/00_inventory_tool_call_trace/inventory_medium_live_comparison_trace_export.md)
+- [Medium normalized timeline](outputs/00_inventory_tool_call_trace/inventory_medium_normalized_semantic_timeline.md)
+- [Inventory replenishment outputs](outputs/01_inventory_replenishment/)
+
 ### 2. Incident investigation
 
 Both arms start with the same checkout log search and error-rate metric, then use
@@ -42,6 +50,8 @@ evidence-complete explanation, exactly the required two-call start, no duplicate
 calls, and correct Direct or Programmatic caller linkage. This scenario highlights
 the tradeoff between keeping intermediate evidence inside generated JavaScript and
 letting the model perform semantic judgment between Direct calls.
+
+Saved results: [Incident investigation outputs](outputs/02_incident_investigation/)
 
 ### 3. Refund selection and approval
 
@@ -56,6 +66,8 @@ to generated programs. An invalid or ungrounded selection stops the workflow bef
 the action stage. All actions are deterministic local simulations; no real refund
 system is connected.
 
+Saved results: [Refund selection and approval outputs](outputs/03_refund_selection_and_approval/)
+
 ## Project layout
 
 ```text
@@ -64,9 +76,13 @@ notebooks/01_inventory_replenishment.ipynb  # fixed fan-out tutorial
 notebooks/02_incident_investigation.ipynb   # adaptive investigation tutorial
 notebooks/03_refund_selection_and_approval.ipynb # read/action boundary tutorial
 src/ptc_benchmark/                          # shared API loop, fixtures, evaluation
+src/ptc_trace_demo/                         # bounded OpenAI Trace integration
 pricing/                                    # dated, replaceable pricing snapshot
-tests/                                      # offline, notebook, mocked, and live smoke tests
+outputs/                                    # checked-in Markdown experiment reports
+tests/                                      # offline fixture, pricing, and mocked runner tests
 results/                                    # generated JSONL, excluded from Git
+pyproject.toml                              # package and uv dependency configuration
+requirements.txt                           # pip-compatible minimum dependencies
 ```
 
 ## Setup
@@ -77,18 +93,18 @@ environment with `pip`.
 ### Using `uv`
 
 ```bash
-cd programmatic_tool_calling_demo
-uv sync --extra dev
+cd direct-vs-programmatic-tool-calling
+uv sync --group dev
 cp .env.local.example .env.local
 ```
 
 ### Using `pip`
 
-`requirements.txt` pins the dependencies for the notebooks, tests, and optional
-Trace export.
+`requirements.txt` lists the minimum dependency versions for the notebooks,
+tests, and Trace export.
 
 ```bash
-cd programmatic_tool_calling_demo
+cd direct-vs-programmatic-tool-calling
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
@@ -124,41 +140,35 @@ Set `SHOW_TRACE_ERROR_DETAILS = True` temporarily to include the Trace ingest
 response body in SDK error logs. Keep it `False` during normal use because detailed
 logs may include sensitive model or tool data.
 
-Install the optional exporter before enabling Trace export:
-
-```bash
-uv sync --extra dev --extra trace
-```
-
-The exporter is already included when installing from `requirements.txt`.
+The Trace integration uses `openai-agents`, which is included by both
+`uv sync --group dev` and `requirements.txt`; no separate Trace extra is needed.
 
 ## Verify without API cost
 
 ```bash
-uv run pytest -m "not live"
+uv run pytest
 ```
 
 With the `pip` setup, use:
 
 ```bash
-PYTHONPATH=src python -m pytest -m "not live"
+PYTHONPATH=src python -m pytest
 ```
 
-This validates all fixture families, pricing, Direct and multi-pause Programmatic
-continuation loops with mocked Responses objects, and top-to-bottom execution of
-all notebooks with live calls disabled.
+This validates all fixture families, pricing and result parsing, plus the mocked
+Responses runner's function-call continuation path. The test suite does not make
+API calls or execute the notebooks top to bottom.
 
-## Opt-in live smoke test
+## Opt-in live runs
 
-The following command sends one small inventory flow, one database-pool incident
-flow, and one simulated refund workflow per arm and may incur API charges:
+There is no automated live smoke-test target. To run a live comparison, open the
+relevant notebook, review its scale and reasoning settings, then explicitly set
+only the required `RUN_*` controls to `True`. Live runs require `OPENAI_API_KEY`
+and may incur API charges.
 
-```bash
-RUN_LIVE_SMOKE=1 uv run pytest -m live -s
-```
-
-`OPENAI_MODEL` defaults to `gpt-5.6`. Both arms always use the same model and
-reasoning effort in one comparison.
+`OPENAI_MODEL` defaults to `gpt-5.6`. Both arms use the same model and reasoning
+effort within one comparison. `OPENAI_PRICING_PATH` can override the checked-in
+pricing snapshot used for estimates.
 
 ## Interpretation limits
 
