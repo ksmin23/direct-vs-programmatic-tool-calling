@@ -26,4 +26,6 @@ packages = ["src/ptc_benchmark", "src/ptc_trace_demo"]
 [tool.pytest.ini_options]
 addopts = "-q"
 testpaths = ["tests"]
-
+markers = [
+    "live: opt-in tests that make billable OpenAI API requests",
+]
